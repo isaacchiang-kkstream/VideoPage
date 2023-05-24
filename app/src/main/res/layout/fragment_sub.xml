@@ -6,12 +6,6 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:context=".page.PagerSubFragment">
 
-    <com.google.android.exoplayer2.ui.PlayerView
-        android:id="@+id/player_view"
-        app:use_controller="false"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
-
     <ImageView
         android:id="@+id/cover_image"
         android:scaleType="centerCrop"

@@ -10,12 +10,16 @@ import androidx.fragment.app.Fragment
 import com.bumptech.glide.Glide
 import com.google.android.exoplayer2.C
 import com.google.android.exoplayer2.MediaItem
+import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.SimpleExoPlayer
 import com.google.android.exoplayer2.drm.DefaultDrmSessionManager
 import com.google.android.exoplayer2.drm.FrameworkMediaDrm
 import com.google.android.exoplayer2.drm.HttpMediaDrmCallback
 import com.google.android.exoplayer2.source.MediaSource
 import com.google.android.exoplayer2.source.dash.DashMediaSource
+import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
+import com.google.android.exoplayer2.trackselection.TrackSelector
+import com.google.android.exoplayer2.ui.PlayerView
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
 import com.google.android.exoplayer2.video.VideoListener
 import com.kkstream.videopage.R
@@ -29,6 +33,9 @@ class PagerSubFragment : Fragment() {
     private val binding get() = _binding!!
 
     private var player: SimpleExoPlayer? = null
+
+    private var playerView: PlayerView? = null
+    private var trackSelector: DefaultTrackSelector? = null
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -71,7 +78,13 @@ class PagerSubFragment : Fragment() {
             return mediaSourceFactory.createMediaSource(mediaItem)
         }
 
-        player = SimpleExoPlayer.Builder(requireContext()).build()
+//        trackSelector = DefaultTrackSelector(requireContext())
+        trackSelector?.buildUponParameters()?.setMaxVideoSize(Int.MAX_VALUE, 720)?.let {
+            trackSelector?.setParameters(it)
+        }
+        player = SimpleExoPlayer.Builder(requireContext())
+            .setTrackSelector(trackSelector ?: DefaultTrackSelector(requireContext()))
+            .build()
 //        binding.playerView.player = player
 
         player?.addVideoListener(object : VideoListener {
@@ -79,6 +92,7 @@ class PagerSubFragment : Fragment() {
                 super.onRenderedFirstFrame()
 
                 showCoverImage(false)
+                player?.volume = 1f
             }
         })
 
@@ -109,18 +123,22 @@ class PagerSubFragment : Fragment() {
     override fun onResume() {
         super.onResume()
 
-        binding.playerView.player = player
+        player?.volume = 0f
+        playerView = PlayerView(requireContext())
+        binding.root.addView(playerView, 0)
+        playerView?.player = player
 
         player?.playWhenReady = true
     }
 
     override fun onPause() {
         super.onPause()
-
-        binding.playerView.player = null
-        showCoverImage(true)
-
         player?.playWhenReady = false
+
+        playerView?.player = null
+        binding.root.removeView(playerView)
+
+        showCoverImage(true)
     }
 
     override fun onStop() {
