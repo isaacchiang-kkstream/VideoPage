@@ -7,6 +7,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import com.bumptech.glide.Glide
 import com.google.android.exoplayer2.C
 import com.google.android.exoplayer2.MediaItem
 import com.google.android.exoplayer2.SimpleExoPlayer
@@ -16,6 +17,8 @@ import com.google.android.exoplayer2.drm.HttpMediaDrmCallback
 import com.google.android.exoplayer2.source.MediaSource
 import com.google.android.exoplayer2.source.dash.DashMediaSource
 import com.google.android.exoplayer2.upstream.DefaultHttpDataSource
+import com.google.android.exoplayer2.video.VideoListener
+import com.kkstream.videopage.R
 import com.kkstream.videopage.adapter.PagerAdapter.Companion.KEY_MEDIA_CONFIG
 import com.kkstream.videopage.data.MediaConfig
 import com.kkstream.videopage.databinding.FragmentSubBinding
@@ -69,7 +72,15 @@ class PagerSubFragment : Fragment() {
         }
 
         player = SimpleExoPlayer.Builder(requireContext()).build()
-        binding.playerView.player = player
+//        binding.playerView.player = player
+
+        player?.addVideoListener(object : VideoListener {
+            override fun onRenderedFirstFrame() {
+                super.onRenderedFirstFrame()
+
+                showCoverImage(false)
+            }
+        })
 
         val mediaConfig = arguments?.getParcelable(KEY_MEDIA_CONFIG) as? MediaConfig
         val mediaSource = initMediaSource(mediaConfig)
@@ -77,14 +88,37 @@ class PagerSubFragment : Fragment() {
         player?.prepare()
     }
 
+    override fun onStart() {
+        super.onStart()
+
+        showCoverImage(true)
+    }
+
+    private fun showCoverImage(showed: Boolean) {
+        if (showed) {
+            Glide.with(requireContext())
+                .load(R.drawable.pikachu)
+                .into(binding.coverImage)
+            binding.coverImage.visibility = View.VISIBLE
+        } else {
+            Glide.with(requireContext()).clear(binding.coverImage)
+            binding.coverImage.visibility = View.GONE
+        }
+    }
+
     override fun onResume() {
         super.onResume()
+
+        binding.playerView.player = player
 
         player?.playWhenReady = true
     }
 
     override fun onPause() {
         super.onPause()
+
+        binding.playerView.player = null
+        showCoverImage(true)
 
         player?.playWhenReady = false
     }
